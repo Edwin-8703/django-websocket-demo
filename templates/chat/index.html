@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>WebSocket Demo</title>
+  <style>
+    body { font-family: monospace; max-width: 600px; margin: 40px auto; padding: 0 16px; background: #111; color: #eee; }
+    h2 { color: #00ff88; }
+    #log { border: 1px solid #333; padding: 12px; height: 300px; overflow-y: auto; background: #0a0a0a; border-radius: 6px; margin-bottom: 12px; }
+    .msg  { margin: 4px 0; }
+    .sent { color: #00d4ff; }
+    .recv { color: #ffb300; }
+    .info { color: #555; font-style: italic; }
+    .row  { display: flex; gap: 8px; }
+    input { flex: 1; background: #1a1a1a; border: 1px solid #333; color: #eee; padding: 8px 12px; border-radius: 4px; font-family: monospace; outline: none; }
+    input:focus { border-color: #00ff88; }
+    button { background: #00ff88; color: #000; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    #status { font-size: 12px; color: #555; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+  <h2>WebSocket Demo</h2>
+  <div id="status">● disconnected</div>
+  <div id="log"></div>
+  <div class="row">
+    <input id="inp" placeholder="Type a message..." disabled/>
+    <button id="btn" disabled>Send</button>
+  </div>
+
+  <script>
+    const log    = document.getElementById('log');
+    const inp    = document.getElementById('inp');
+    const btn    = document.getElementById('btn');
+    const status = document.getElementById('status');
+
+    function print(text, cls) {
+      const d = document.createElement('div');
+      d.className = 'msg ' + cls;
+      d.textContent = text;
+      log.appendChild(d);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    const ws = new WebSocket('ws://' + location.host + '/ws/');
+
+    ws.onopen = () => {
+      status.textContent = '● connected';
+      status.style.color = '#00ff88';
+      inp.disabled = false;
+      btn.disabled = false;
+    };
+
+    ws.onclose = () => {
+      status.textContent = '● disconnected';
+      status.style.color = '#555';
+      inp.disabled = true;
+      btn.disabled = true;
+    };
+
+    ws.onmessage = ({ data }) => {
+      const { message } = JSON.parse(data);
+      print('← ' + message, 'recv');
+    };
+
+    function send() {
+      const text = inp.value.trim();
+      if (!text) return;
+      ws.send(JSON.stringify({ message: text }));
+      print('→ ' + text, 'sent');
+      inp.value = '';
+    }
+
+    btn.onclick = send;
+    inp.addEventListener('keydown', e => e.key === 'Enter' && send());
+  </script>
+</body>
+</html>
